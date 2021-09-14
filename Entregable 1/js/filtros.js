@@ -3,8 +3,8 @@
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 let rect = canvas.getBoundingClientRect(); //donde esta el canvas con respecto a la pantalla
-let width = 500;
-let height = 500;
+let width = canvas.width;
+let height = canvas.height;
 let x = 0,
     y = 0,
     dibujando = false,
@@ -12,18 +12,47 @@ let x = 0,
     grosor = 1; //variables globales
 
 let image = new Image();
-image.src = "img/ciudad.jpg";
+//image.src = "img/ciudad.jpg";
 
-image.onload = function() {
-    myDrawImageMethod(this);
+//image.onload = function() {
+//    myDrawImageMethod(this);
+//}
+
+let input = document.getElementById("myFile"); //se carga imagen que se quiere desde ordenador de usuario
+input.addEventListener('change', function(event) {
+    let f = event.target.files[0];
+    let fr = new FileReader();
+
+    fr.onload = function(ev2) {
+        image.src = ev2.target.result;
+        image.onload = function() {
+            myDrawImageMethod(this);
+        }
+    }
+    fr.readAsDataURL(f);
+});
+
+function VolverImgBase(){
+    ctx.restore();
 }
+
+
 
 function myDrawImageMethod(imagen) {
-    ctx.drawImage(imagen, 0, 0, width, height);
+    var canvas = ctx.canvas;
+    var hRatio = canvas.width / imagen.width;
+    var vRatio = canvas.height / imagen.height;
+    var ratio = Math.min(hRatio, vRatio);
+    var centerShift_x = (canvas.width - imagen.width * ratio) / 2;
+    var centerShift_y = (canvas.height - imagen.height * ratio) / 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imagen, 0, 0, imagen.width, imagen.height,
+        centerShift_x, centerShift_y, imagen.width * ratio, imagen.height * ratio);
 }
 
+
 function Grises() {
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
@@ -39,7 +68,7 @@ function Grises() {
 }
 
 function Binario() {
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
@@ -63,7 +92,7 @@ function Binario() {
 }
 
 function Negativo() {
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
@@ -77,7 +106,7 @@ function Negativo() {
 }
 
 function Sepia() {
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
@@ -100,59 +129,61 @@ function Sepia() {
     ctx.putImageData(data, 0, 0);
 }
 
-function Saturacion(){
+function Saturacion() {
 
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     let contrast = 150; // Default value
- 
-    let factor = ( 259 * ( contrast + 255 ) ) / ( 255 * ( 259 - contrast ) );
- 
+
+    let factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
         let azul = data.data[index * 4 + 2];
- 
-        data.data[ index * 4 ] = factor * ( rojo - 128 ) + 128;
-        data.data[ index * 4 + 1 ] = factor * ( verde - 128 ) + 128;
-        data.data[ index * 4 + 2 ] = factor * ( azul - 128 ) + 128;
+
+        data.data[index * 4] = factor * (rojo - 128) + 128;
+        data.data[index * 4 + 1] = factor * (verde - 128) + 128;
+        data.data[index * 4 + 2] = factor * (azul - 128) + 128;
     }
- 
-    ctx.putImageData(data, 0, 0 );
+
+    ctx.putImageData(data, 0, 0);
 }
 
 
 function Blur(){
     let data = ctx.getImageData(0, 0, width, height);
-    for (let index = 0; index < data.data.length; index++) {
-        let rojo = data.data[index * 4];
-        let verde = data.data[index * 4 + 1];
-        let azul = data.data[index * 4 + 2];
+    for(let i=0;i<3;i++){
+        for (let index = 0; index < data.data.length; index++) {
+            let rojo = data.data[index * 4];
+            let verde = data.data[index * 4 + 1];
+            let azul = data.data[index * 4 + 2];
 
-       /* if(data.data[index*4-4].isEmpty()){
-            let promr = (data.data[index*4]+data.data[index*4+4])/2;
-            let promg = (data.data[index*4+1]+data.data[index*4+1+4])/2;
-            let promb = (data.data[index*4+2]+data.data[index*4+2+4])/2;
+           /* if(data.data[index*4-4].isEmpty()){
+                let promr = (data.data[index*4]+data.data[index*4+4])/2;
+                let promg = (data.data[index*4+1]+data.data[index*4+1+4])/2;
+                let promb = (data.data[index*4+2]+data.data[index*4+2+4])/2;
+            }
+            if(data.data[index*4+4].isEmpty()){
+                let promr = (data.data[index*4]+data.data[index*4-4])/2;
+                let promg = (data.data[index*4+1]+data.data[index*4+1-4])/2;
+                let promb = (data.data[index*4+2]+data.data[index*4+2-4])/2;
+            }
+            else{*/
+                let promr = (data.data[index*4]+data.data[index*4-4]+data.data[index*4+4])/3;
+                let promg = (data.data[index*4+1]+data.data[index*4+1-4]+data.data[index*4+1+4])/3;
+                let promb = (data.data[index*4+2]+data.data[index*4+2-4]+data.data[index*4+2+4])/3;
+            //}
+            data.data[index * 4] = promr;
+            data.data[index * 4 + 1] = promg;
+            data.data[index * 4 + 2] = promb;
         }
-        if(data.data[index*4+4].isEmpty()){
-            let promr = (data.data[index*4]+data.data[index*4-4])/2;
-            let promg = (data.data[index*4+1]+data.data[index*4+1-4])/2;
-            let promb = (data.data[index*4+2]+data.data[index*4+2-4])/2;
-        }
-        else{*/
-            let promr = (data.data[index*4]+data.data[index*4-4]+data.data[index*4+4])/3;
-            let promg = (data.data[index*4+1]+data.data[index*4+1-4]+data.data[index*4+1+4])/3;
-            let promb = (data.data[index*4+2]+data.data[index*4+2-4]+data.data[index*4+2+4])/3;
-        //}
-        data.data[index * 4] = promr;
-        data.data[index * 4 + 1] = promg;
-        data.data[index * 4 + 2] = promb;
     }
-        console.log(data.data.length);
+        console.log(data);
         ctx.putImageData(data, 0, 0);
 }
 
 function Brillo() {
-    let data = ctx.getImageData(0, 0, width, height);
+    let data = ctx.getImageData(0, 0, image.width, image.height);
     for (let index = 0; index < data.data.length; index++) {
         let rojo = data.data[index * 4];
         let verde = data.data[index * 4 + 1];
@@ -211,4 +242,26 @@ function dibujar(x1, y1, x2, y2) {
 function setBorrado() {
     color = "#FFFFFF";
     grosor = 20;
+}
+
+// guardar imagen 
+document.getElementById('descargar').onclick = function() {
+
+    let filename = prompt("Guardar como", ""),
+        link = document.createElement('a');
+
+    if (filename == null) { //si el usiario dio cancelar
+        return false;
+    } else if (filename == "") { //si el usuario le dio click y no puso nombre al archivo
+        link.download = "Sin título";
+        link.href = canvas.toDataURL("image/png"); //usa la imagen del canvas
+    } else { //si el usuario le dio aceptar y puso un nombre al archivo
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+    }
+    link.click();
+}
+
+document.getElementById('reset').onclick = function() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
